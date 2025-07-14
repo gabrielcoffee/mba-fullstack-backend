@@ -1,18 +1,34 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
 
 @Injectable()
 export class DatabaseService {
     private pool: Pool;
 
-    constructor() {
-        this.pool = new Pool({
-            user: process.env.DB_USER,
-            host: process.env.DB_HOST,
-            database: process.env.DB_NAME,
-            password: process.env.DB_PASSWORD,
-            port: parseInt(process.env.DB_PORT || '5432'),
+    constructor(private configService: ConfigService) {
+        const config = {
+            user: this.configService.get<string>('DB_USER'),
+            host: this.configService.get<string>('DB_HOST'),
+            database: this.configService.get<string>('DB_NAME'),
+            password: this.configService.get<string>('DB_PASSWORD'),
+            port: this.configService.get<number>('DB_PORT', 5432),
+            ssl: {
+                rejectUnauthorized: false
+            }
+        };
+        
+        /*
+        console.log('Configuração do banco:', {
+            user: config.user,
+            host: config.host,
+            database: config.database,
+            password: config.password ? '***HIDDEN***' : 'NOT_FOUND',
+            port: config.port
         });
+        */
+       
+        this.pool = new Pool(config);
     }
 
     // Funcão para conexão com banco de dados por queries.
