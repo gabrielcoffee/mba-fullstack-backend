@@ -1,4 +1,7 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, HttpException, HttpStatus, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { ProductsService } from './products.service';
 import { Product } from './product.entity';
 
@@ -18,6 +21,36 @@ export class ProductsController {
       throw new HttpException('Produto não encontrado', HttpStatus.NOT_FOUND);
     }
     return product;
+  }
+
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('image', {
+    storage: diskStorage({
+      destination: './uploads',
+      filename: (req, file, cb) => {
+        const randomName = Array(32).fill(null)
+          .map(() => Math.round(Math.random() * 16).toString(16)).join('');
+        return cb(null, `${randomName}${extname(file.originalname)}`);
+      }
+    }),
+    fileFilter: (req, file, cb) => {
+      if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+        return cb(new Error('Apenas arquivos de imagem são permitidos!'), false);
+      }
+      cb(null, true);
+    },
+    limits: {
+      fileSize: 5 * 1024 * 1024 // 5MB
+    }
+  }))
+  async uploadImage(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new HttpException('Nenhum arquivo enviado', HttpStatus.BAD_REQUEST);
+    }
+    return { 
+      filename: file.filename,
+      imageUrl: `/uploads/${file.filename}` 
+    };
   }
 
   @Post()
