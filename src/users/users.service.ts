@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../shared/database.service';
 import { User } from './user.entity';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -24,20 +25,41 @@ export class UsersService {
     return result.rows[0] || null;
   }
 
+  // Criptografar senha
+  private async hashPassword(password: string): Promise<string> {
+    const saltRounds = 10;
+    return bcrypt.hash(password, saltRounds);
+  }
+
+  // Verificar senha
+  async verifyPassword(plainPassword: string, hashedPassword: string): Promise<boolean> {
+    return bcrypt.compare(plainPassword, hashedPassword);
+  }
+
   // Criar um novo usuário
   async create(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
+    // Criptografar a senha antes de salvar
+    const hashedPassword = await this.hashPassword(userData.password);
+    
     const result = await this.database.query(
       'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *',
-      [userData.name, userData.email, userData.password]
+      [userData.name, userData.email, hashedPassword]
     );
     return result.rows[0];
   }
 
   // Atualizar um usuário existente
   async update(id: number, userData: Partial<User>): Promise<User | null> {
+    let hashedPassword = userData.password;
+    
+    // Se uma nova senha foi fornecida, criptografá-la
+    if (userData.password) {
+      hashedPassword = await this.hashPassword(userData.password);
+    }
+    
     const result = await this.database.query(
       'UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email), password = COALESCE($3, password), updated_at = CURRENT_TIMESTAMP WHERE id = $4 RETURNING *',
-      [userData.name, userData.email, userData.password, id]
+      [userData.name, userData.email, hashedPassword, id]
     );
     return result.rows[0] || null;
   }
