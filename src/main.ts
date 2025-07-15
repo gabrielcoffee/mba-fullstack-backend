@@ -13,9 +13,9 @@ async function bootstrap() {
       'http://localhost:3001', 
       'http://localhost:5173',
       'http://localhost:8080',
-      'https://mba-fullstack-frontend.onrender.com', // Seu frontend no Render
-      'https://seu-frontend.vercel.app', // Se usar Vercel
-      'https://seu-frontend.netlify.app' // Se usar Netlify
+      'https://mba-fullstack-frontend.onrender.com',
+      'https://mba-fullstack-rocketseat.netlify.app', // Seu frontend no Netlify
+      'https://seu-frontend.vercel.app'
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
